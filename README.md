@@ -15,6 +15,23 @@ The project aims to integrate OpenAI's **Whisper** (for transcription), **CLIP**
 
 ### 1. Prerequisites
 - Python 3.8 or later installed.
+- **FFmpeg** installed for audio extraction:
+  - On macOS (via Homebrew):
+    ```bash
+    brew install ffmpeg
+    ```
+  - On Ubuntu/Debian:
+    ```bash
+    sudo apt update
+    sudo apt install ffmpeg
+    ```
+  - On Windows:
+    - Download FFmpeg from [ffmpeg.org](https://ffmpeg.org/download.html).
+    - Add the `bin` directory to your system's PATH.
+  - Verify installation:
+    ```bash
+    ffmpeg -version
+    ```
 
 ### 2. Clone the Repository
 ```bash
@@ -74,11 +91,12 @@ pip install -r requirements.txt
   - Created the project structure for Flask (backend) and Streamlit (frontend).
 - [x] **Virtual Environment**:
   - Created and configured a Python virtual environment.
-
-### To-Do:
-- [ ] **Transcription Module**:
+- [x] **Transcription Module**:
   - Integrate OpenAI's Whisper model for local transcription.
   - Create an endpoint in Flask for uploading and processing audio.
+  - Integrated transcription functionality into the frontend.
+
+### To-Do:
 - [ ] **Scene Analysis Module**:
   - Integrate OpenAI's CLIP model for keyframe description.
   - Add functionality in the backend to extract and process keyframes.
