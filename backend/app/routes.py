@@ -1,7 +1,6 @@
-from flask import Blueprint, request, jsonify
 import os
-import subprocess
-import whisper
+from flask import Blueprint, request, jsonify
+from app.utils import extract_audio, transcribe_audio
 
 main = Blueprint("main", __name__)
 
@@ -31,17 +30,14 @@ def upload_video():
     # Extract audio from video
     audio_path = os.path.join(AUDIO_FOLDER, f"{os.path.splitext(file.filename)[0]}.wav")
     try:
-        subprocess.run(
-            ["ffmpeg", "-i", file_path, "-q:a", "0", "-map", "a", audio_path],
-            check=True
-        )
-    except subprocess.CalledProcessError:
-        return jsonify({"error": "Error extracting audio"}), 500
+        extract_audio(file_path, audio_path)
+    except RuntimeError as e:
+        return jsonify({"error": str(e)}), 500
     
     return jsonify({"message": "Video uploaded and audio extracted", "audio_path": audio_path}), 200
 
 @main.route("/transcribe", methods=["POST"])
-def transcribe_audio():
+def transcribe():
     data = request.get_json()
     audio_path = data.get("audio_path")
     
@@ -49,8 +45,7 @@ def transcribe_audio():
         return jsonify({"error" : "Audio file not found"}), 400
     
     try:
-        model = whisper.load_model("base")
-        result = model.transcribe(audio_path)
-        return jsonify({"transcription" : result["text"]})
+        transcription = transcribe_audio(audio_path)
+        return jsonify({"transcription" : transcription})
     except Exception as e:
         return jsonify({"error" : str(e)}), 500
