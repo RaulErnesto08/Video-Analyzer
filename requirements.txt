@@ -5,3 +5,5 @@ openai-clip
 setuptools
 torchvision
 transformers
+openai
+python-dotenv
