@@ -95,11 +95,11 @@ pip install -r requirements.txt
   - Integrate OpenAI's Whisper model for local transcription.
   - Create an endpoint in Flask for uploading and processing audio.
   - Integrated transcription functionality into the frontend.
-
-### To-Do:
-- [ ] **Scene Analysis Module**:
+- [x] **Scene Analysis Module**:
   - Integrate OpenAI's CLIP model for keyframe description.
   - Add functionality in the backend to extract and process keyframes.
+
+### To-Do:
 - [ ] **Summarization Module**:
   - Use the OpenAI GPT API to generate video summaries.
   - Add API integration for GPT in the backend.
