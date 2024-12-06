@@ -76,3 +76,23 @@ if st.button("Generate Scene Descriptions"):
                     st.image(keyframe, caption=f"{details['description']} (Confidence: {details['confidence']:.2f})")
         else:
             st.error(f"Error: {response.json().get('error')}")
+            
+if st.button("Generate Summary"):
+    transcription = st.session_state.get("transcription", "")
+    if not transcription:
+        st.error("Transcription not found. Upload a video and transcribe it first.")
+    else:
+        with st.spinner("Generating summary..."):
+            length = st.selectbox("Choose summary length", ["Concise", "Detailed"])
+            style = st.selectbox("Choose summary style", ["Formal", "Casual", "Technical"])
+
+            response = requests.post(
+                f"{BACKEND_URL}/summarize",
+                json={"transcription": transcription, "length": length.lower(), "style": style.lower()}
+            )
+
+        if response.status_code == 200:
+            summary = response.json().get("summary")
+            st.text_area("Summary", summary, height=200)
+        else:
+            st.error(f"Error: {response.json().get('error')}")

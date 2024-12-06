@@ -97,13 +97,13 @@ pip install -r requirements.txt
   - Integrated transcription functionality into the frontend.
 - [x] **Scene Analysis Module**:
   - Integrate OpenAI's CLIP model for keyframe description.
-  - Add functionality in the backend to extract and process keyframes.
-
-### To-Do:
-- [ ] **Summarization Module**:
+  - Use OpenAI GPT to generate keywords for description.
+- [x] **Summarization Module**:
   - Use the OpenAI GPT API to generate video summaries.
   - Add API integration for GPT in the backend.
   - Provide options for different summary lengths (e.g., detailed, concise).
+
+### To-Do:
 - [ ] **Backend-Frontend Integration**:
   - Enable frontend to send video files to the backend for processing.
   - Display results (transcriptions, descriptions, summaries) in the frontend.

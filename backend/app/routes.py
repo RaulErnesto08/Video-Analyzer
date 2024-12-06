@@ -2,9 +2,12 @@ import os
 from os.path import abspath
 from dotenv import load_dotenv
 from flask import Blueprint, request, jsonify
-from app.utils import extract_audio, transcribe_audio
-from app.utils.scene_utils import describe_scene, extract_keywords_with_gpt
-from app.utils.video_utils import extract_keyframes
+from app.utils import (
+        extract_audio, extract_keyframes,
+        transcribe_audio, 
+        extract_keywords_with_gpt, describe_scene,
+        generate_summary_with_gpt
+    )
 
 main = Blueprint("main", __name__)
 
@@ -89,3 +92,22 @@ def scene_analysis():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@main.route("/summarize", methods=["POST"])
+def summarize():
+    data = request.get_json()
+    transcription = data.get("transcription", "")
+    length = data.get("length", "concise")
+    style = data.get("style", "formal")
+    api_key = os.getenv("OPENAI_API_KEY")
+
+    if not transcription:
+        return jsonify({"error": "Transcription not provided"}), 400
+
+    try:
+        summary = generate_summary_with_gpt(transcription, length, style, api_key)
+        if not summary:
+            return jsonify({"error": "Failed to generate summary"}), 500
+
+        return jsonify({"summary": summary}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
