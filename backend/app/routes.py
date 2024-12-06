@@ -48,6 +48,27 @@ def upload_video():
     
     return jsonify({"message": "Video uploaded and audio extracted", "audio_path": audio_path, "file_path": file_path}), 200
 
+@main.route("/transcribe_and_summarize", methods=["POST"])
+def transcribe_and_summarize():
+    data = request.get_json()
+    audio_path = data.get("audio_path")
+    length = data.get("length", "concise")
+    style = data.get("style", "formal")
+
+    if not audio_path or not os.path.exists(audio_path):
+        return jsonify({"error": "Audio file not found"}), 400
+
+    try:
+        # Transcribe audio
+        transcription = transcribe_audio(audio_path)
+
+        # Generate summary
+        summary = generate_summary_with_gpt(transcription, length, style, os.getenv("OPENAI_API_KEY"))
+
+        return jsonify({"transcription": transcription, "summary": summary}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @main.route("/transcribe", methods=["POST"])
 def transcribe():
     data = request.get_json()

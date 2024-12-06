@@ -3,96 +3,73 @@ import requests
 
 BACKEND_URL = "http://127.0.0.1:5000"
 
+st.set_page_config(page_title="Video Analyzer", layout="wide")
+
 st.title("Video Analyzer")
 
-uploaded_file = st.file_uploader("Upload a video", type=["mp4", "mov"])
+left_column, right_column = st.columns(2)
 
-if uploaded_file is not None:
-    with st.spinner("Uploading and processing..."):
-        files = {"file": ("video.mp4", uploaded_file.getvalue(), "video/mp4")}
-        response = requests.post(f"{BACKEND_URL}/upload", files=files)
+with left_column:
+    st.header("Upload")
 
-    if response.status_code == 200:
-        st.success("Video uploaded and audio extracted successfully!")
+    uploaded_file = st.file_uploader("Upload a video", type=["mp4", "mov"])
+    
+    length_column, style_column = st.columns(2)
+    with length_column:
+        summary_length = st.selectbox("Summary Length", ["Concise", "Detailed"], key="length")
+    with style_column:
+        summary_style = st.selectbox("Summary Style", ["Formal", "Casual", "Technical"], key="style")
         
-        # Store paths in session state
-        audio_path = response.json().get("audio_path")
-        video_path = response.json().get("file_path")
-        st.session_state["audio_path"] = audio_path
-        st.session_state["video_path"] = video_path
-
-        # Debugging
-        st.write("Audio Path:", audio_path)
-        st.write("Video Path:", video_path)
-
-        st.json(response.json())
-    else:
-        st.error(f"Error: {response.json().get('error')}")
-
-# Call the transcription endpoint
-if st.button("Transcribe Audio"):
-    audio_path = st.session_state.get("audio_path")
-    if not audio_path:
-        st.error("Audio path not found. Upload a video first.")
-    else:
-        with st.spinner("Transcribing audio..."):
-            response = requests.post(f"{BACKEND_URL}/transcribe", json={"audio_path": audio_path})
-        
-        if response.status_code == 200:
-            st.success("Transcription completed!")
-            transcription = response.json().get("transcription")
-            
-            # Store transcription in session state
-            st.session_state["transcription"] = transcription
-            
-            st.text_area("Transcription", transcription, height=300)
+    if st.button("Generate Summary"):
+        if uploaded_file is None:
+            st.error("Please upload a video file first.")
         else:
-            st.error(f"Error: {response.json().get('error')}")
-
-if st.button("Generate Scene Descriptions"):
-    video_path = st.session_state.get("video_path")
-    transcription = st.session_state.get("transcription", "")  # Optional transcription context
-    if not video_path:
-        st.error("Video path not found. Upload a video first.")
-    else:
-        with st.spinner("Generating scene descriptions..."):
-            response = requests.post(
-                f"{BACKEND_URL}/scene_analysis",
-                json={"video_path": video_path, "transcription": transcription}
-            )
-
-        if response.status_code == 200:
-            st.success("Scene analysis completed!")
-            descriptions = response.json().get("keyframes", {})
-            for keyframe, details in descriptions.items():
-                # Debugging: Print keyframe paths
-                st.write(f"Keyframe Path: {keyframe}")
-                st.write(f"Description: {details['description']}")
+            with st.spinner("Uploading and processing..."):
+                files = {"file": ("video.mp4", uploaded_file.getvalue(), "video/mp4")}
+                upload_response = requests.post(f"{BACKEND_URL}/upload", files=files)
+            
+            if upload_response.status_code == 200:
+                st.success("Video uploaded and audio extracted successfully!")
                 
-                # Render images using absolute paths
-                if "error" in details:
-                    st.write(f"Keyframe: {keyframe} - Error: {details['error']}")
+                audio_path = upload_response.json().get("audio_path")
+                
+                with st.spinner("Generating summary..."):
+                    summary_response = requests.post(
+                        f"{BACKEND_URL}/transcribe_and_summarize",
+                        json={
+                            "audio_path": audio_path,
+                            "length": summary_length.lower(),
+                            "style": summary_style.lower(),
+                        }
+                    )
+                
+                if summary_response.status_code == 200:
+                    result = summary_response.json()
+                    st.session_state["transcription"] = result.get("transcription")
+                    st.session_state["summary"] = result.get("summary")
                 else:
-                    st.image(keyframe, caption=f"{details['description']} (Confidence: {details['confidence']:.2f})")
-        else:
-            st.error(f"Error: {response.json().get('error')}")
+                    st.error(f"Error: {summary_response.json().get('error')}")
             
-if st.button("Generate Summary"):
-    transcription = st.session_state.get("transcription", "")
-    if not transcription:
-        st.error("Transcription not found. Upload a video and transcribe it first.")
+            else:
+                st.error(f"Error: {upload_response.json().get('error')}")
+    
+    if uploaded_file is not None:
+        st.video(uploaded_file)
+                
+                
+                
+
+with right_column:
+    st.header("Results")
+
+    st.subheader("Transcript")
+    if "transcription" in st.session_state:
+        st.text_area("Transcription", st.session_state["transcription"], height=200)
     else:
-        with st.spinner("Generating summary..."):
-            length = st.selectbox("Choose summary length", ["Concise", "Detailed"])
-            style = st.selectbox("Choose summary style", ["Formal", "Casual", "Technical"])
+        st.write("No transcription available.")
 
-            response = requests.post(
-                f"{BACKEND_URL}/summarize",
-                json={"transcription": transcription, "length": length.lower(), "style": style.lower()}
-            )
-
-        if response.status_code == 200:
-            summary = response.json().get("summary")
-            st.text_area("Summary", summary, height=200)
-        else:
-            st.error(f"Error: {response.json().get('error')}")
+    st.subheader("Summary")
+    if "summary" in st.session_state:
+        st.text_area("Summary", st.session_state["summary"], height=200)
+    else:
+        st.write("No summary available.")
