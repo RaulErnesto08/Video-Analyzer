@@ -25,7 +25,7 @@ def extract_keyframes(video_path, output_dir):
     :return: List of extracted keyframe file paths.
     """
     os.makedirs(output_dir, exist_ok=True)
-    keyframe_pattern = os.path.join(output_dir, "frame_%04d.jpg")
+    keyframe_pattern = os.path.join(output_dir, "frame_%04d.jpeg")
     try:
         subprocess.run(
             ["ffmpeg", "-i", video_path, "-vf", "select=eq(pict_type\\,I)", "-vsync", "vfr", keyframe_pattern],

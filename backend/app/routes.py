@@ -4,9 +4,9 @@ from dotenv import load_dotenv
 from flask import Blueprint, request, jsonify
 from app.utils import (
         extract_audio, extract_keyframes,
-        transcribe_audio, 
-        extract_keywords_with_gpt, describe_scene,
-        generate_summary_with_gpt
+        transcribe_audio,
+        analyze_scenes_with_gpt_vision,
+        generate_summary_with_gpt,
     )
 
 main = Blueprint("main", __name__)
@@ -42,9 +42,6 @@ def upload_video():
     except RuntimeError as e:
         return jsonify({"error": str(e)}), 500
 
-    # Debugging
-    print(f"Video Path: {file_path}")
-    print(f"Audio Path: {audio_path}")
     
     return jsonify({"message": "Video uploaded and audio extracted", "audio_path": audio_path, "file_path": file_path}), 200
 
@@ -69,26 +66,10 @@ def transcribe_and_summarize():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@main.route("/transcribe", methods=["POST"])
-def transcribe():
-    data = request.get_json()
-    audio_path = data.get("audio_path")
-    
-    if not audio_path or not os.path.exists(audio_path):
-        print(f"Audio Path Not Found: {audio_path}")
-        return jsonify({"error" : "Audio file not found"}), 400
-    
-    try:
-        transcription = transcribe_audio(audio_path)
-        return jsonify({"transcription" : transcription})
-    except Exception as e:
-        return jsonify({"error" : str(e)}), 500
-
 @main.route("/scene_analysis", methods=["POST"])
 def scene_analysis():
     data = request.get_json()
     video_path = data.get("video_path")
-    transcription = data.get("transcription", "")
     output_dir = abspath("../keyframes")
     api_key = os.getenv("OPENAI_API_KEY")
 
@@ -99,36 +80,12 @@ def scene_analysis():
         # Extract keyframes
         keyframes = extract_keyframes(video_path, output_dir)
 
-        # Generate keywords with GPT
-        if transcription:
-            keywords = extract_keywords_with_gpt(transcription, api_key)
-            if not keywords:
-                return jsonify({"error": "Failed to extract keywords with GPT"}), 500
-        else:
-            keywords = []
+        if not keyframes:
+            return jsonify({"error": "No keyframes extracted from the video."}), 400
 
-        # Generate descriptions using keywords
-        descriptions = describe_scene(keyframes, keywords, transcription)
-        return jsonify({"keyframes": descriptions}), 200
+        scene_descriptions = analyze_scenes_with_gpt_vision(keyframes, api_key)
+
+        return jsonify(scene_descriptions), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@main.route("/summarize", methods=["POST"])
-def summarize():
-    data = request.get_json()
-    transcription = data.get("transcription", "")
-    length = data.get("length", "concise")
-    style = data.get("style", "formal")
-    api_key = os.getenv("OPENAI_API_KEY")
-
-    if not transcription:
-        return jsonify({"error": "Transcription not provided"}), 400
-
-    try:
-        summary = generate_summary_with_gpt(transcription, length, style, api_key)
-        if not summary:
-            return jsonify({"error": "Failed to generate summary"}), 500
-
-        return jsonify({"summary": summary}), 200
-    except Exception as e:
+        print(f"Error during scene analysis: {e}")
         return jsonify({"error": str(e)}), 500

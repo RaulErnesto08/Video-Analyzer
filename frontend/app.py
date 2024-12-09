@@ -32,6 +32,7 @@ with left_column:
                 st.success("Video uploaded and audio extracted successfully!")
                 
                 audio_path = upload_response.json().get("audio_path")
+                video_path = upload_response.json().get("file_path")
                 
                 with st.spinner("Generating summary..."):
                     summary_response = requests.post(
@@ -47,6 +48,18 @@ with left_column:
                     result = summary_response.json()
                     st.session_state["transcription"] = result.get("transcription")
                     st.session_state["summary"] = result.get("summary")
+                    
+                    with st.spinner("Analyzing scenes..."):
+                        scene_analysis_response = requests.post(
+                            f"{BACKEND_URL}/scene_analysis",
+                            json={"video_path": video_path}
+                        )
+                    
+                    if scene_analysis_response.status_code == 200:
+                        st.session_state["scene_descriptions"] = scene_analysis_response.json().get("frames")
+                    else:
+                        st.error(f"Error during scene analysis: {scene_analysis_response.json().get('error')}")
+                        
                 else:
                     st.error(f"Error: {summary_response.json().get('error')}")
             
@@ -55,9 +68,6 @@ with left_column:
     
     if uploaded_file is not None:
         st.video(uploaded_file)
-                
-                
-                
 
 with right_column:
     st.header("Results")
@@ -73,3 +83,10 @@ with right_column:
         st.text_area("Summary", st.session_state["summary"], height=200)
     else:
         st.write("No summary available.")
+    
+    if "scene_descriptions" in st.session_state:
+        st.subheader("Scene Descriptions")
+        with st.expander("View Scene Descriptions"):
+            for frame in st.session_state["scene_descriptions"]:
+                st.image(frame["frame_path"], caption=f"Frame {frame['frame_number']}")
+                st.write(frame["description"])
