@@ -36,9 +36,10 @@ with left_column:
                 
                 with st.spinner("Generating summary..."):
                     summary_response = requests.post(
-                        f"{BACKEND_URL}/transcribe_and_summarize",
+                        f"{BACKEND_URL}/generate_summary",
                         json={
                             "audio_path": audio_path,
+                            "video_path": video_path,
                             "length": summary_length.lower(),
                             "style": summary_style.lower(),
                         }
@@ -47,19 +48,8 @@ with left_column:
                 if summary_response.status_code == 200:
                     result = summary_response.json()
                     st.session_state["transcription"] = result.get("transcription")
+                    st.session_state["scene_descriptions"] = result.get("scene_descriptions").get("frames")
                     st.session_state["summary"] = result.get("summary")
-                    
-                    with st.spinner("Analyzing scenes..."):
-                        scene_analysis_response = requests.post(
-                            f"{BACKEND_URL}/scene_analysis",
-                            json={"video_path": video_path}
-                        )
-                    
-                    if scene_analysis_response.status_code == 200:
-                        st.session_state["scene_descriptions"] = scene_analysis_response.json().get("frames")
-                    else:
-                        st.error(f"Error during scene analysis: {scene_analysis_response.json().get('error')}")
-                        
                 else:
                     st.error(f"Error: {summary_response.json().get('error')}")
             

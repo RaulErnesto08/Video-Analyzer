@@ -1,4 +1,6 @@
 import os
+import asyncio
+
 from os.path import abspath
 from dotenv import load_dotenv
 from flask import Blueprint, request, jsonify
@@ -18,10 +20,6 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(AUDIO_FOLDER, exist_ok=True)
 
 load_dotenv()
-
-@main.route("/")
-def hello_world():
-    return "Hello, Flask!"
 
 @main.route("/upload", methods=["POST"])
 def upload_video():
@@ -45,47 +43,46 @@ def upload_video():
     
     return jsonify({"message": "Video uploaded and audio extracted", "audio_path": audio_path, "file_path": file_path}), 200
 
-@main.route("/transcribe_and_summarize", methods=["POST"])
-def transcribe_and_summarize():
+@main.route("/generate_summary", methods=["POST"])
+async def generate_summary():
     data = request.get_json()
     audio_path = data.get("audio_path")
+    video_path = data.get("video_path")
     length = data.get("length", "concise")
     style = data.get("style", "formal")
-
-    if not audio_path or not os.path.exists(audio_path):
-        return jsonify({"error": "Audio file not found"}), 400
-
-    try:
-        # Transcribe audio
-        transcription = transcribe_audio(audio_path)
-
-        # Generate summary
-        summary = generate_summary_with_gpt(transcription, length, style, os.getenv("OPENAI_API_KEY"))
-
-        return jsonify({"transcription": transcription, "summary": summary}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@main.route("/scene_analysis", methods=["POST"])
-def scene_analysis():
-    data = request.get_json()
-    video_path = data.get("video_path")
     output_dir = abspath("../keyframes")
     api_key = os.getenv("OPENAI_API_KEY")
 
+    if not audio_path or not os.path.exists(audio_path):
+        return jsonify({"error": "Audio file not found"}), 400
     if not video_path or not os.path.exists(video_path):
         return jsonify({"error": "Video file not found"}), 400
 
     try:
-        # Extract keyframes
-        keyframes = extract_keyframes(video_path, output_dir)
+        # Asynchronously run transcription and scene processing
+        async def run_tasks():
+            # Run transcription and keyframe extraction in parallel
+            transcription = asyncio.create_task(asyncio.to_thread(transcribe_audio, audio_path))
+            keyframes = await asyncio.to_thread(extract_keyframes, video_path, output_dir)
+            scene_descriptions = await asyncio.to_thread(analyze_scenes_with_gpt_vision, keyframes, api_key)
 
-        if not keyframes:
-            return jsonify({"error": "No keyframes extracted from the video."}), 400
+            return await transcription, scene_descriptions
 
-        scene_descriptions = analyze_scenes_with_gpt_vision(keyframes, api_key)
+        transcription, scene_descriptions = await run_tasks()
 
-        return jsonify(scene_descriptions), 200
+        summary = generate_summary_with_gpt(
+            transcription=transcription,
+            scene_descriptions=scene_descriptions,
+            length=length,
+            style=style,
+            api_key=api_key,
+        )
+
+        return jsonify({
+            "transcription": transcription,
+            "scene_descriptions": scene_descriptions,
+            "summary": summary,
+        }), 200
+
     except Exception as e:
-        print(f"Error during scene analysis: {e}")
         return jsonify({"error": str(e)}), 500
