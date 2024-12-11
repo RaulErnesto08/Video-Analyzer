@@ -65,7 +65,7 @@ async def generate_summary():
             # Run transcription and keyframe extraction in parallel
             transcription = asyncio.create_task(asyncio.to_thread(transcribe_audio, audio_path, language))
             keyframes = await asyncio.to_thread(extract_keyframes, video_path, output_dir)
-            scene_descriptions = await asyncio.to_thread(analyze_scenes_with_gpt_vision, keyframes, api_key)
+            scene_descriptions = await asyncio.to_thread(analyze_scenes_with_gpt_vision, keyframes, api_key, language)
 
             return await transcription, scene_descriptions
 
