@@ -50,6 +50,7 @@ async def generate_summary():
     video_path = data.get("video_path")
     length = data.get("length", "concise")
     style = data.get("style", "formal")
+    language = data.get("language")
     output_dir = abspath("../keyframes")
     api_key = os.getenv("OPENAI_API_KEY")
 
@@ -62,7 +63,7 @@ async def generate_summary():
         # Asynchronously run transcription and scene processing
         async def run_tasks():
             # Run transcription and keyframe extraction in parallel
-            transcription = asyncio.create_task(asyncio.to_thread(transcribe_audio, audio_path))
+            transcription = asyncio.create_task(asyncio.to_thread(transcribe_audio, audio_path, language))
             keyframes = await asyncio.to_thread(extract_keyframes, video_path, output_dir)
             scene_descriptions = await asyncio.to_thread(analyze_scenes_with_gpt_vision, keyframes, api_key)
 
@@ -70,8 +71,9 @@ async def generate_summary():
 
         transcription, scene_descriptions = await run_tasks()
 
-        summary = generate_summary_with_gpt(
-            transcription=transcription,
+        summary, tags = generate_summary_with_gpt(
+            transcription=transcription["text"],
+            language=transcription["language"],
             scene_descriptions=scene_descriptions,
             length=length,
             style=style,
@@ -79,9 +81,11 @@ async def generate_summary():
         )
 
         return jsonify({
-            "transcription": transcription,
+            "transcription": transcription["text"],
+            "language": transcription["language"],
             "scene_descriptions": scene_descriptions,
             "summary": summary,
+            "tags": tags,
         }), 200
 
     except Exception as e:

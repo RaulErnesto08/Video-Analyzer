@@ -1,5 +1,6 @@
-import streamlit as st
 import requests
+import streamlit as st
+from streamlit_tags import st_tags
 
 BACKEND_URL = "http://127.0.0.1:5000"
 
@@ -13,6 +14,12 @@ with left_column:
     st.header("Upload")
 
     uploaded_file = st.file_uploader("Upload a video", type=["mp4", "mov"])
+    
+    language = st.selectbox(
+        "Language",
+        options=["Video's default", "English", "Spanish", "French", "German", "Chinese", "Japanese"],
+        key="language"
+    )
     
     length_column, style_column = st.columns(2)
     with length_column:
@@ -42,6 +49,7 @@ with left_column:
                             "video_path": video_path,
                             "length": summary_length.lower(),
                             "style": summary_style.lower(),
+                            "language": None if language == "Video's default" else language.lower(),
                         }
                     )
                 
@@ -50,6 +58,7 @@ with left_column:
                     st.session_state["transcription"] = result.get("transcription")
                     st.session_state["scene_descriptions"] = result.get("scene_descriptions").get("frames")
                     st.session_state["summary"] = result.get("summary")
+                    st.session_state["tags"] = result.get("tags")
                 else:
                     st.error(f"Error: {summary_response.json().get('error')}")
             
@@ -73,6 +82,15 @@ with right_column:
         st.text_area("Summary", st.session_state["summary"], height=200)
     else:
         st.write("No summary available.")
+    
+    if "tags" in st.session_state and st.session_state["tags"]:
+        st_tags(
+            label="Video Tags:",
+            text="",
+            value=st.session_state["tags"],
+            suggestions=[],
+            key="tags_display"
+        )
     
     if "scene_descriptions" in st.session_state:
         st.subheader("Scene Descriptions")
