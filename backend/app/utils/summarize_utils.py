@@ -1,5 +1,24 @@
 import json
 from openai import OpenAI
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+def call_gpt_with_retries(client, messages, json_schema):
+    """
+    Calls the GPT API with retries on failure.
+    :param client: OpenAI API client instance.
+    :param messages: Messages for GPT.
+    :param json_schema: JSON schema for the response.
+    :return: GPT response.
+    """
+    
+    return client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        response_format={"type": "json_schema", "json_schema": json_schema},
+        max_tokens=1000,
+        temperature=0.7,
+    )
 
 def generate_summary_with_gpt(transcription, scene_descriptions, length, style, api_key, language):
     """
@@ -55,19 +74,16 @@ def generate_summary_with_gpt(transcription, scene_descriptions, length, style, 
             f"### Output:\n"
         )
 
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant for summarizing a video based on its transcription and scenes description."},
-                {"role": "user", "content": prompt}
-            ],
-            response_format={"type": "json_schema", "json_schema": json_schema},
-            max_tokens=1000,
-            temperature=0.7
-        )
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant for summarizing a video based on its transcription and scenes description."},
+            {"role": "user", "content": prompt}
+        ]
+        
+        response = call_gpt_with_retries(client, messages, json_schema)
+        result = json.loads(response.choices[0].message.content)
 
         result = json.loads(response.choices[0].message.content)
         return result["summary"], result["tags"]
     except Exception as e:
         print(f"Error generating summary with GPT: {e}")
-        return None
+        return None, []
