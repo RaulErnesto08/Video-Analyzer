@@ -1,3 +1,4 @@
+import json
 import requests
 import streamlit as st
 from streamlit_tags import st_tags
@@ -80,6 +81,12 @@ with right_column:
     st.subheader("Summary")
     if "summary" in st.session_state:
         st.text_area("Summary", st.session_state["summary"], height=200)
+        st.download_button(
+            label="Download Summary",
+            data=st.session_state["summary"],
+            file_name="summary.txt",
+            mime="text/plain"
+        )
     else:
         st.write("No summary available.")
     
@@ -98,3 +105,26 @@ with right_column:
             for frame in st.session_state["scene_descriptions"]:
                 st.image(frame["frame_path"], caption=f"Frame {frame['frame_number']}")
                 st.write(frame["description"])
+                
+    if "transcription" in st.session_state:
+        scene_descriptions_without_paths = [
+            {"description": frame["description"], "frame_number": frame["frame_number"]}
+            for frame in st.session_state.get("scene_descriptions", [])
+        ]
+        
+        results = {
+            "transcription": st.session_state.get("transcription"),
+            "summary": st.session_state.get("summary"),
+            "tags": st.session_state.get("tags"),
+            "scene_descriptions": scene_descriptions_without_paths
+        }
+        
+        results_json = json.dumps(results, indent=4)
+        st.download_button(
+            label="Download All Results",
+            data=results_json,
+            file_name="results.json",
+            mime="application/json"
+        )
+    else:
+        st.write("No results to download.")
