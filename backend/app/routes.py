@@ -1,7 +1,8 @@
 import os
+import uuid
 import asyncio
-
 from os.path import abspath
+from datetime import datetime
 from dotenv import load_dotenv
 from flask import Blueprint, request, jsonify
 from app.utils import (
@@ -13,11 +14,7 @@ from app.utils import (
 
 main = Blueprint("main", __name__)
 
-UPLOAD_FOLDER = "../input_videos"
-AUDIO_FOLDER = "../audio_files"
-
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(AUDIO_FOLDER, exist_ok=True)
+UPLOAD_BASE_DIR = "../uploads"
 
 load_dotenv()
 
@@ -30,18 +27,39 @@ def upload_video():
     if file.filename == "":
         return jsonify({"error": "No selected file"}), 400
     
-    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
-    file.save(file_path)
+    # Generate a unique subdirectory for this upload
+    unique_id = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}"
+    video_dir = os.path.join(UPLOAD_BASE_DIR, unique_id)
+    os.makedirs(video_dir, exist_ok=True)
 
-    # Extract audio from video
-    audio_path = os.path.join(AUDIO_FOLDER, f"{os.path.splitext(file.filename)[0]}.wav")
+    # Save uploaded video
+    video_filename = f"{unique_id}_{file.filename}"
+    video_path = os.path.join(video_dir, video_filename)
+    file.save(video_path)
+
+    # Extract audio
+    audio_dir = os.path.join(video_dir, "audio")
+    os.makedirs(audio_dir, exist_ok=True)
+    audio_path = os.path.join(audio_dir, f"{unique_id}_audio.wav")
+
     try:
-        extract_audio(file_path, audio_path)
+        extract_audio(video_path, audio_path)
     except RuntimeError as e:
         return jsonify({"error": str(e)}), 500
 
-    
-    return jsonify({"message": "Video uploaded and audio extracted", "audio_path": audio_path, "file_path": file_path}), 200
+    # Extract keyframes directly into the `keyframes` folder in the video's directory
+    keyframes_dir = os.path.join(video_dir, "keyframes")
+    try:
+        keyframes = extract_keyframes(video_path, keyframes_dir)
+    except RuntimeError as e:
+        return jsonify({"error": str(e)}), 500
+
+    return jsonify({
+        "message": "Video uploaded, audio extracted, and keyframes generated",
+        "video_path": video_path,
+        "audio_path": audio_path,
+        "keyframes": keyframes
+    }), 200
 
 @main.route("/generate_summary", methods=["POST"])
 async def generate_summary():
@@ -51,8 +69,10 @@ async def generate_summary():
     length = data.get("length", "concise")
     style = data.get("style", "formal")
     language = data.get("language")
-    output_dir = abspath("../keyframes")
     api_key = os.getenv("OPENAI_API_KEY")
+    
+    video_dir = os.path.dirname(video_path)
+    keyframes_dir = os.path.join(video_dir, "keyframes")
 
     if not audio_path or not os.path.exists(audio_path):
         return jsonify({"error": "Audio file not found"}), 400
@@ -64,7 +84,7 @@ async def generate_summary():
         async def run_tasks():
             # Run transcription and keyframe extraction in parallel
             transcription = asyncio.create_task(asyncio.to_thread(transcribe_audio, audio_path, language))
-            keyframes = await asyncio.to_thread(extract_keyframes, video_path, output_dir)
+            keyframes = await asyncio.to_thread(extract_keyframes, video_path, keyframes_dir)
             scene_descriptions = await asyncio.to_thread(analyze_scenes_with_gpt_vision, keyframes, api_key, language)
 
             return await transcription, scene_descriptions

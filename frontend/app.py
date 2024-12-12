@@ -33,14 +33,14 @@ with left_column:
             st.error("Please upload a video file first.")
         else:
             with st.spinner("Uploading and processing..."):
-                files = {"file": ("video.mp4", uploaded_file.getvalue(), "video/mp4")}
+                files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)}
                 upload_response = requests.post(f"{BACKEND_URL}/upload", files=files)
             
             if upload_response.status_code == 200:
                 st.success("Video uploaded and audio extracted successfully!")
                 
                 audio_path = upload_response.json().get("audio_path")
-                video_path = upload_response.json().get("file_path")
+                video_path = upload_response.json().get("video_path")
                 
                 with st.spinner("Generating summary..."):
                     summary_response = requests.post(
@@ -57,15 +57,14 @@ with left_column:
                 if summary_response.status_code == 200:
                     result = summary_response.json()
                     st.session_state["transcription"] = result.get("transcription")
-                    st.session_state["scene_descriptions"] = result.get("scene_descriptions").get("frames")
+                    st.session_state["scene_descriptions"] = result.get("scene_descriptions", {}).get("frames", [])
                     st.session_state["summary"] = result.get("summary")
                     st.session_state["tags"] = result.get("tags")
                 else:
                     st.error(f"Error: {summary_response.json().get('error')}")
-            
             else:
                 st.error(f"Error: {upload_response.json().get('error')}")
-    
+
     if uploaded_file is not None:
         st.video(uploaded_file)
 
@@ -103,12 +102,12 @@ with right_column:
         st.subheader("Scene Descriptions")
         with st.expander("View Scene Descriptions"):
             for frame in st.session_state["scene_descriptions"]:
-                st.image(frame["frame_path"], caption=f"Frame {frame['frame_number']}")
-                st.write(frame["description"])
+                st.image(frame.get("frame_path"), caption=f"Frame {frame.get('frame_number')}")
+                st.write(frame.get("description"))
                 
     if "transcription" in st.session_state:
         scene_descriptions_without_paths = [
-            {"description": frame["description"], "frame_number": frame["frame_number"]}
+            {"description": frame.get("description"), "frame_number": frame.get("frame_number")}
             for frame in st.session_state.get("scene_descriptions", [])
         ]
         

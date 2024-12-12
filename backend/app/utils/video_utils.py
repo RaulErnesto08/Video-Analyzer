@@ -27,7 +27,8 @@ def extract_keyframes(video_path, output_dir, num_frames=10):
     :return: List of extracted keyframe file paths.
     """
     os.makedirs(output_dir, exist_ok=True)
-    keyframe_pattern = os.path.join(output_dir, "frame_%04d.jpeg")
+    unique_id = os.path.basename(video_path).split("_")[0]
+    keyframe_pattern = os.path.join(output_dir, f"{unique_id}_frame_%04d.jpeg")
     
     try:
         subprocess.run(
@@ -36,7 +37,7 @@ def extract_keyframes(video_path, output_dir, num_frames=10):
         )
         
         # Collect all keyframe file paths
-        keyframes = sorted([os.path.join(output_dir, f) for f in os.listdir(output_dir)])
+        keyframes = sorted([os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith(".jpeg")])
         
         # Uniformly sample the keyframes
         total_frames = len(keyframes)
