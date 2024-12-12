@@ -9,3 +9,4 @@ openai
 python-dotenv
 streamlit-tags
 tenacity
+pytest

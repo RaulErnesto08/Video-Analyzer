@@ -102,17 +102,17 @@ pip install -r requirements.txt
   - Use the OpenAI GPT API to generate video summaries.
   - Add API integration for GPT in the backend.
   - Provide options for different summary lengths (e.g., detailed, concise).
-
-### To-Do:
-- [ ] **Backend-Frontend Integration**:
+- [x] **Backend-Frontend Integration**:
   - Enable frontend to send video files to the backend for processing.
   - Display results (transcriptions, descriptions, summaries) in the frontend.
   - Add functionality to download results as a file (e.g., JSON or text).
   - Automatically generate tags for the video based on its transcript and scene descriptions.
   - Display tags in the frontend for quick content categorization.
-- [ ] **Testing**:
+- [x] **Testing**:
   - Write unit tests for Flask routes.
   - Test Streamlit interaction with the backend.
+
+### To-Do:
 - [ ] **Deployment**:
   - Containerize the application using Docker.
   - Prepare deployment configurations for AWS.
