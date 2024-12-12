@@ -82,12 +82,18 @@ async def generate_summary():
     try:
         # Asynchronously run transcription and scene processing
         async def run_tasks():
-            # Run transcription and keyframe extraction in parallel
-            transcription = asyncio.create_task(asyncio.to_thread(transcribe_audio, audio_path, language))
+            transcription_task = asyncio.create_task(asyncio.to_thread(transcribe_audio, audio_path, language))
+            
             keyframes = await asyncio.to_thread(extract_keyframes, video_path, keyframes_dir)
-            scene_descriptions = await asyncio.to_thread(analyze_scenes_with_gpt_vision, keyframes, api_key, language)
 
-            return await transcription, scene_descriptions
+            if not keyframes:
+                raise RuntimeError("No keyframes extracted, cannot proceed with scene analysis.")
+
+            # Run scene analysis after keyframes are extracted
+            scene_descriptions = await asyncio.to_thread(analyze_scenes_with_gpt_vision, keyframes, api_key, language)
+            transcription = await transcription_task
+
+            return transcription, scene_descriptions
 
         transcription, scene_descriptions = await run_tasks()
 
