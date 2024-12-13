@@ -1,9 +1,12 @@
+import os
 import json
 import requests
 import streamlit as st
+from dotenv import load_dotenv
 from streamlit_tags import st_tags
 
-BACKEND_URL = "http://127.0.0.1:5000"
+load_dotenv()
+BACKEND_URL = os.getenv("BACKEND_URL")
 
 st.set_page_config(page_title="Video Analyzer", layout="wide")
 
