@@ -1,10 +1,7 @@
 flask[async]
 streamlit
 openai-whisper
-openai-clip
-setuptools
 torchvision
-transformers
 openai
 python-dotenv
 streamlit-tags
