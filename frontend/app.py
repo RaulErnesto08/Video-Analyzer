@@ -9,6 +9,14 @@ st.set_page_config(page_title="Video Analyzer", layout="wide")
 
 st.title("Video Analyzer")
 
+# Helper function to reset session state
+def reset_session_state():
+    st.session_state["transcription"] = None
+    st.session_state["scene_descriptions"] = []
+    st.session_state["summary"] = None
+    st.session_state["tags"] = []
+    st.session_state["uploaded_file_id"] = None
+
 left_column, right_column = st.columns(2)
 
 with left_column:
@@ -32,6 +40,11 @@ with left_column:
         if uploaded_file is None:
             st.error("Please upload a video file first.")
         else:
+            reset_session_state()
+
+            # Set a unique ID for the uploaded file
+            st.session_state["uploaded_file_id"] = uploaded_file.name + str(uploaded_file.size)
+
             with st.spinner("Uploading and processing..."):
                 files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)}
                 upload_response = requests.post(f"{BACKEND_URL}/upload", files=files)
@@ -95,7 +108,7 @@ with right_column:
             text="",
             value=st.session_state["tags"],
             suggestions=[],
-            key="tags_display"
+            key=f"tags_display_{st.session_state.get('uploaded_file_id', 'default')}"
         )
     
     if "scene_descriptions" in st.session_state:
