@@ -1,0 +1,30 @@
+{
+    "AWSEBDockerrunVersion": "2",
+    "containerDefinitions": [
+      {
+        "name": "backend",
+        "image": "545009853242.dkr.ecr.us-east-1.amazonaws.com/video_analyzer_backend:latest",
+        "essential": true,
+        "memory": 512,
+        "portMappings": [
+          {
+            "hostPort": 5000,
+            "containerPort": 5000
+          }
+        ]
+      },
+      {
+        "name": "frontend",
+        "image": "545009853242.dkr.ecr.us-east-1.amazonaws.com/video_analyzer_frontend:latest",
+        "essential": true,
+        "memory": 512,
+        "portMappings": [
+          {
+            "hostPort": 8501,
+            "containerPort": 8501
+          }
+        ]
+      }
+    ]
+  }
+  
