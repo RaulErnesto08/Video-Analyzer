@@ -4,34 +4,40 @@
 
 The **Video Analyzer** is a tool that processes video content to provide:
 - **Transcriptions**: Convert audio into text using advanced speech-to-text models.
-- **Scene Descriptions**: Extract keyframes from videos and generate descriptions using computer vision models.
+- **Scene Descriptions**: Extract keyframes from videos and generate descriptions using GPT-4 Vision.
 - **Summaries**: Generate concise summaries of the video's content using natural language processing.
 
-The project aims to integrate OpenAI's **Whisper** (for transcription), **CLIP** (for scene analysis), and **GPT** (for summarization) into a cohesive system. The prototype is built using **Flask** for the backend and **Streamlit** for the frontend for simplicity and rapid development.
+The project integrates OpenAI's **Whisper** (for transcription), **GPT-4 Vision** (for scene analysis), and **GPT** (for summarization) into a cohesive system. The prototype is built using **Flask** for the backend and **Streamlit** for the frontend for simplicity and rapid development.
 
 ---
 
 ## Instructions to Run the Project
 
 ### 1. Prerequisites
-- Python 3.8 or later installed.
-- **FFmpeg** installed for audio extraction:
-  - On macOS (via Homebrew):
-    ```bash
-    brew install ffmpeg
-    ```
-  - On Ubuntu/Debian:
-    ```bash
-    sudo apt update
-    sudo apt install ffmpeg
-    ```
-  - On Windows:
-    - Download FFmpeg from [ffmpeg.org](https://ffmpeg.org/download.html).
-    - Add the `bin` directory to your system's PATH.
-  - Verify installation:
-    ```bash
-    ffmpeg -version
-    ```
+- **Docker** and **Docker Compose** installed.
+  - Installation guides:
+    - [Docker Install](https://docs.docker.com/get-docker/)
+    - [Docker Compose Install](https://docs.docker.com/compose/install/)
+
+- Optional for Local Development:
+  - Python 3.8 or later installed.
+  - **FFmpeg** installed for audio extraction:
+    - On macOS (via Homebrew):
+      ```bash
+      brew install ffmpeg
+      ```
+    - On Ubuntu/Debian:
+      ```bash
+      sudo apt update
+      sudo apt install ffmpeg
+      ```
+    - On Windows:
+      - Download FFmpeg from [ffmpeg.org](https://ffmpeg.org/download.html).
+      - Add the `bin` directory to your system's PATH.
+    - Verify installation:
+      ```bash
+      ffmpeg -version
+      ```
 
 ### 2. Clone the Repository
 ```bash
@@ -39,7 +45,25 @@ git clone https://github.com/RaulErnesto08/Video-Analyzer
 cd Video-Analyzer
 ```
 
-### 3. Set Up a Virtual Environment
+---
+
+## Run the Project with Docker
+
+### 1. Build and Start Containers
+Run the following command in the root directory of the project:
+```bash
+docker-compose up --build
+```
+
+### 2. Access the Application
+- **Frontend (Streamlit)**: `http://localhost:8501`
+- **Backend (Flask)**: `http://localhost:5000`
+
+---
+
+## Run the Project Locally (Without Docker)
+
+### 1. Set Up a Virtual Environment
 1. Create the virtual environment:
    ```bash
    python3 -m venv venv
@@ -54,13 +78,13 @@ cd Video-Analyzer
      venv\Scripts\activate
      ```
 
-### 4. Install Dependencies
+### 2. Install Dependencies
 Install the required Python packages:
 ```bash
 pip install -r requirements.txt
 ```
 
-### 5. Run the Backend (Flask)
+### 3. Run the Backend (Flask)
 1. Navigate to the `backend` directory:
    ```bash
    cd backend
@@ -71,7 +95,7 @@ pip install -r requirements.txt
    ```
 3. The backend will be available at `http://127.0.0.1:5000`.
 
-### 6. Run the Frontend (Streamlit)
+### 4. Run the Frontend (Streamlit)
 1. Navigate to the `frontend` directory:
    ```bash
    cd ../frontend
@@ -111,9 +135,7 @@ pip install -r requirements.txt
 - [x] **Testing**:
   - Write unit tests for Flask routes.
   - Test Streamlit interaction with the backend.
-
-### To-Do:
-- [ ] **Deployment**:
+- [x] **Deployment**:
   - Containerize the application using Docker.
-  - Prepare deployment configurations for AWS.
+  - Deploy the application on Google Cloud Platform (GCP) using Compute 
   - Test deployment for public access.
