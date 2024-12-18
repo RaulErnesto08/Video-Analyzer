@@ -19,6 +19,8 @@ services:
     container_name: video_analyzer_frontend
     ports:
       - "8501:8501"
+    volumes:
+      - ./uploads:/app/uploads
     environment:
       - BACKEND_URL=http://backend:5000
     depends_on:

@@ -14,7 +14,7 @@ from app.utils import (
 
 main = Blueprint("main", __name__)
 
-UPLOAD_BASE_DIR = "../uploads"
+UPLOAD_BASE_DIR = os.path.abspath(os.path.join(os.getcwd(), "uploads"))
 
 load_dotenv()
 
