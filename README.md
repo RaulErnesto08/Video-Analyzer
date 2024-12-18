@@ -45,6 +45,25 @@ git clone https://github.com/RaulErnesto08/Video-Analyzer
 cd Video-Analyzer
 ```
 
+### 3. Environment Variables Configuration  
+The project requires some environment variables for proper functioning, such as API keys and backend URLs.
+
+1. Copy the example file `.env.example` and rename it to `.env` in the root directory:  
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Open the `.env` file and fill in the required variables:
+
+   **Example of `.env`**:  
+   ```plaintext
+   OPENAI_API_KEY="your_openai_api_key_here"
+   BACKEND_URL="http://127.0.0.1:5000"
+   ```
+
+   - Replace `your_openai_api_key_here` with your OpenAI API key.  
+   - Set `BACKEND_URL` to point to the correct backend URL (default is `http://127.0.0.1:5000`).
+
 ---
 
 ## Run the Project with Docker
@@ -137,5 +156,5 @@ pip install -r requirements.txt
   - Test Streamlit interaction with the backend.
 - [x] **Deployment**:
   - Containerize the application using Docker.
-  - Deploy the application on Google Cloud Platform (GCP) using Compute 
+  - Deploy the application on Google Cloud Platform (GCP) using Compute Engine.
   - Test deployment for public access.
